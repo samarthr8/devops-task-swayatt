@@ -1,4 +1,4 @@
-# Logo Server2
+# Logo Server
 
 A simple Express.js web server that serves the Swayatt logo image.
 
