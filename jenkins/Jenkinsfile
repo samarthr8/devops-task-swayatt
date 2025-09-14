@@ -44,9 +44,9 @@ pipeline {
             steps {
                 script {
                     // This assumes Jenkins is running on the EC2 instance
-                    sh "docker stop devops-task-deployment"
-                    sh "docker rm devops-task-deployment"
-                    sh "docker run -d --name devops-task -p 3000:3000 --name devops-task-deployment ${IMAGE_NAME}:latest"
+                    sh "docker stop devops-task-deployment || true"
+                    sh "docker rm devops-task-deployment || true" 
+                    sh "docker run -d -p 3000:3000 --name devops-task-deployment ${IMAGE_NAME}:latest"
                 }
             }
         }
@@ -54,6 +54,31 @@ pipeline {
         stage('Verify Deployment') {
             steps {
                 sh 'docker ps'
+            }
+        }
+        
+        stage('K8s Deployment') {
+            steps {
+                script {
+                    sh '''
+                        aws eks update-kubeconfig --region us-east-1 --name devops-task-cluster
+                        kubectl apply -f K8s/deployment.yaml
+                        kubectl apply -f K8s/service.yaml
+                        sleep 30
+                    '''
+                    }
+                }
+            }
+        
+        stage('Verify K8s Deployment') {
+            steps {
+                script {
+                    sh '''
+                        aws eks update-kubeconfig --region us-east-1 --name devops-task-cluster
+                        kubectl get pods
+                        kubectl get svc
+                    '''
+                }
             }
         }
     }
